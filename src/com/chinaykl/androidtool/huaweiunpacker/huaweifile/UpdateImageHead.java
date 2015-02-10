@@ -2,12 +2,12 @@ package com.chinaykl.androidtool.huaweiunpacker.huaweifile;
 
 import java.util.Arrays;
 
-import com.chinaykl.library.util.variable.array;
+import com.chinaykl.library.util.variable.Array;
 
 public class UpdateImageHead {
 	// name start end len
 	// magic 0 3 4
-	// headsize 4 7 4
+	// headsize 4 7 4 (include magic)
 	// version 8 11 4
 	// hardware 12 19 8
 	// checksum 20 23 4
@@ -20,48 +20,50 @@ public class UpdateImageHead {
 
 	private final int HEADSIZES = 4;
 	private final int HEADSIZEL = 4;
-	private final int HEADSIZEE = HEADSIZES + HEADSIZEL - 1;
+	private final int HEADSIZEE = HEADSIZES + HEADSIZEL;
 	private byte mHeadSize[];
 
-	private final int VERSIONS = HEADSIZEE + 1;
+	private final int VERSIONS = HEADSIZEE;
 	private final int VERSIONL = 4;
-	private final int VERSIONE = VERSIONS + VERSIONL - 1;
+	private final int VERSIONE = VERSIONS + VERSIONL;
 	private byte mVersion[];
 
-	private final int HARDWARES = VERSIONE + 1;
+	private final int HARDWARES = VERSIONE;
 	private final int HARDWAREL = 8;
-	private final int HARDWAREE = HARDWARES + HARDWAREL - 1;
+	private final int HARDWAREE = HARDWARES + HARDWAREL;
 	private byte mHardware[];
 
-	private final int CHECKSUMS = HARDWAREE + 1;
+	private final int CHECKSUMS = HARDWAREE;
 	private final int CHECKSUML = 4;
-	private final int CHECKSUME = CHECKSUMS + CHECKSUML - 1;
+	private final int CHECKSUME = CHECKSUMS + CHECKSUML;
 	private byte mCheckSum[];
 
-	private final int DATASIZES = CHECKSUME + 1;
+	private final int DATASIZES = CHECKSUME;
 	private final int DATASIZEL = 4;
-	private final int DATASIZEE = DATASIZES + DATASIZEL - 1;
+	private final int DATASIZEE = DATASIZES + DATASIZEL;
 	private byte mDataSize[];
 
-	private final int DATES = DATASIZEE + 1;
+	private final int DATES = DATASIZEE;
 	private final int DATEL = 16;
-	private final int DATEE = DATES + DATEL - 1;
+	private final int DATEE = DATES + DATEL;
 	private byte mDate[];
 
-	private final int TIMES = DATEE + 1;
+	private final int TIMES = DATEE;
 	private final int TIMEL = 16;
-	private final int TIMEE = TIMES + TIMEL - 1;
+	private final int TIMEE = TIMES + TIMEL;
 	private byte mTime[];
 
-	private final int INFOS = TIMEE + 1;
+	private final int INFOS = TIMEE;
 	private final int INFOL = 32;
-	private final int INFOE = INFOS + INFOL - 1;
+	private final int INFOE = INFOS + INFOL;
 	private byte mInfo[];
 
 	private static final byte HARDWAREPRE[] = { 'H', 'W' };
+	private static final int NORMALHEADSIZE = 92;
 	private static final int MAXHEADSIZE = 1024;
 
 	public UpdateImageHead(byte[] head) {
+		// get useful data from part of all head
 		mHeadSize = Arrays.copyOfRange(head, HEADSIZES, HEADSIZEE);
 		mVersion = Arrays.copyOfRange(head, VERSIONS, VERSIONE);
 		mHardware = Arrays.copyOfRange(head, HARDWARES, HARDWAREE);
@@ -72,12 +74,20 @@ public class UpdateImageHead {
 		mInfo = Arrays.copyOfRange(head, INFOS, INFOE);
 	}
 
+	// Check the image head flag is right or not (MAGIC)
 	public static boolean isHeadStart(byte[] data) {
 		return Arrays.equals(MAGIC, data);
 	}
 
+	// Check the image head is real or not
+	// sometimes some data contain head flag
+	// but it can not contain hardware info at the same time
 	public static boolean isRealHead(byte[] data) {
 		return Arrays.equals(HARDWAREPRE, data);
+	}
+
+	public static int getNormalHeadSize() {
+		return NORMALHEADSIZE;
 	}
 
 	public static int getMaxHeadSize() {
@@ -85,31 +95,40 @@ public class UpdateImageHead {
 	}
 
 	public int getHeadSize() {
-		return array.bytesToInt(mHeadSize);
+		return Array.bytesToInt(mHeadSize);
 	}
 
 	public String getVersion() {
-		return String.valueOf(mVersion);
+		String result = new String(mVersion);
+		return result.trim();
 	}
 
 	public String getHardware() {
-		return String.valueOf(mHardware).trim();
+		String result = new String(mHardware);
+		return result.trim();
+	}
+
+	public String getCheckSum() {
+		String result = new String(Array.bytesToHex(mCheckSum));
+		return result;
 	}
 
 	public int getDataSize() {
-		return array.bytesToInt(mDataSize);
+		return Array.bytesToInt(mDataSize);
 	}
 
 	public String getDate() {
-		return String.valueOf(mDate).trim();
-
+		String result = new String(mDate);
+		return result.trim();
 	}
 
 	public String getTime() {
-		return String.valueOf(mTime).trim();
+		String result = new String(mTime);
+		return result.trim();
 	}
 
 	public String getInfo() {
-		return String.valueOf(mInfo).trim();
+		String result = new String(mInfo);
+		return result.trim();
 	}
 }

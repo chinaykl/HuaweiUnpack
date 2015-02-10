@@ -2,59 +2,99 @@ package com.chinaykl.androidtool.huaweiunpacker.huaweifile;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.chinaykl.library.util.variable.array;
+import com.chinaykl.library.util.variable.Stream;
 
 public class UpdateFile {
-	private FileInputStream mInStream;
+	private String mInPath;
+	private final String OUTFOLDER = "out/";
 	private ArrayList<UpdateSection> mSections = new ArrayList<UpdateSection>();
 
-	public UpdateFile(String pathname) throws IOException {
-		mInStream = new FileInputStream(pathname);
-		BufferedInputStream bif = new BufferedInputStream(mInStream);
+	public UpdateFile(String path) throws IOException {
+		mInPath = path;
+
+		FileInputStream fis = new FileInputStream(mInPath);
+		BufferedInputStream bif = new BufferedInputStream(fis);
 		seachSection(bif);
-		for(int i =0;i<mSections.size();i++){
-			System.out.println(mSections.get(i).getImageHead().getInfo());
-		}
+		bif.close();
+		fis.close();
+	}
+
+	private String getOutPath(String imageName) {
+		int lastPS = mInPath.lastIndexOf('/');
+		String val = mInPath.substring(0, lastPS + 1);
+
+		val += OUTFOLDER;
+		val += imageName;
+
+		return val;
+	}
+
+	public ArrayList<UpdateSection> getSections() {
+		return mSections;
+	}
+
+	public void exportImageFormFile(int index, int exOff, int buffer) throws IOException {
+		UpdateSection us = mSections.get(index);
+
+		FileInputStream fis = new FileInputStream(mInPath);
+		FileOutputStream fos = new FileOutputStream(getOutPath(us.getImageHead().getInfo()));
+
+		us.exportImageFromSection(fis, exOff, fos, buffer);
+
+		fos.close();
+		fis.close();
 	}
 
 	private int seachSection(BufferedInputStream is) throws IOException {
 		int len = 0;
 		int off = 0;
 		byte[] data = new byte[4];
-		while ((len = is.read(data)) != -1) {	
+
+		do {
 			if (len == 4) {
 				if (UpdateImageHead.isHeadStart(data)) {
-					// found a section
-					is.mark(UpdateImageHead.getMaxHeadSize());
-					
-					// check is this a real section
+					// this may be a section
+
+					// get hardware prefix
 					byte[] hardwarePre = new byte[2];
 					is.skip(8);
 					is.read(hardwarePre);
+
 					if (UpdateImageHead.isRealHead(hardwarePre)) {
-						// read head size
-						byte[] headSizeData = new byte[4];
-						is.reset();
-						is.read(headSizeData);
-						int headSize = array.bytesToInt(headSizeData);
-						
+						// this is a section
 						// create UpdateSection
-						byte[] headData = new byte[headSize];
+						byte[] headData = new byte[UpdateImageHead.getNormalHeadSize()];
 						is.reset();
-						len = is.read(headData);
-						if (len == headSize) {
-							UpdateSection section = new UpdateSection(headData, off);
-							mSections.add(section);
-							off+=len;
+						is.read(headData);
+						UpdateSection section = new UpdateSection(headData, off);
+						mSections.add(section);
+						len = section.getImageHead().getHeadSize() + section.getImageHead().getDataSize();
+
+						// align at 4 byte
+						if ((len % 4) != 0) {
+							len = (len / 4 + 1) * 4;
 						}
+
+						// skip data
+						// it has to skip data step by step or will fail
+						is.reset();
+						Stream.skip(is, len, UpdateImageHead.getMaxHeadSize());
+					} else {
+						// this is not a section
+						// move back to the start of section
+						is.reset();
+						is.skip(len);
 					}
 				}
-				off += 4;
+				off += len;
 			}
-		}
+			is.mark(UpdateImageHead.getMaxHeadSize());
+		} while ((len = is.read(data)) != -1);
+
 		return mSections.size();
 	}
 }
