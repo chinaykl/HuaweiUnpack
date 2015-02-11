@@ -3,16 +3,14 @@ package com.chinaykl.androidtool.huaweiunpacker;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import com.chinaykl.androidtool.huaweiunpacker.huaweifile.UpdateFile;
-import com.chinaykl.androidtool.huaweiunpacker.huaweifile.UpdateImageHead;
-import com.chinaykl.androidtool.huaweiunpacker.huaweifile.UpdateSection;
 import com.chinaykl.library.util.variable.SystemIO;
 
 public class Unpacker {
-	private static final String UPDATEFILE = "UPDATE.APP";
+	private static final String PROGRAMNAME = "Huawei Rom Unpacker";
 	private static final String VERSION = "1.00";
+	private static final String UPDATEFILE = "UPDATE.APP";
 	private static UpdateFile mFile;
 
 	public static void main(String[] args) {
@@ -56,7 +54,7 @@ public class Unpacker {
 
 		// to adjust to different possible path
 		private String revisePath(String op) {
-			String np = null;
+			String np = op;
 			if (op.endsWith(UPDATEFILE) == false) {
 				if (op.endsWith(File.pathSeparator)) {
 					np = op + UPDATEFILE;
@@ -89,11 +87,13 @@ public class Unpacker {
 
 		// print help information
 		private void help() {
-			System.out.println("Unpacker v" + VERSION + ":");
-			System.out.println("-h  --help");
-			System.out.println("-l  --list all the image in UPDATE.APP");
-			System.out.println("-o  --out image");
-			System.out.println("-q  --quit");
+			System.out.println(PROGRAMNAME + " v" + VERSION + ":");
+			System.out.println("h   help");
+			System.out.println("l   list all the image in UPDATE.APP");
+			System.out.println("o   out image");
+			System.out.println("    -name  <Image Name>");
+			System.out.println("    -index <Index>");
+			System.out.println("q   quit");
 		}
 
 		// deal with input
@@ -101,24 +101,30 @@ public class Unpacker {
 			boolean quit = false;
 			String command[] = input.trim().split(" ");
 			switch (command[0]) {
-			case "-h":
+			case "h":
 				help();
 				break;
-			case "-l":
+			case "l":
 				listSection();
 				break;
-			case "-o":
-				if (command.length == 2) {
-					int index = Integer.valueOf(command[1]);
-					exportImage(index);
+			case "o":
+				if (command.length == 3) {
+					boolean result = false;
+					result = export(command[1], command[2]);
+					if (result) {
+						System.out.println("Image Export Success");
+					} else {
+						System.out.println("Image Export Fail");
+					}
 				}
 				break;
-			case "-q":
+			case "q":
 				quit = true;
-				System.out.println("quit");
+				System.out.println("Quit Program");
 				break;
 			default:
-				System.out.println("unknow");
+				System.out.println("Unknow Input");
+				help();
 				break;
 			}
 			return quit;
@@ -126,27 +132,26 @@ public class Unpacker {
 
 		// print sections information of every section
 		private void listSection() {
-			ArrayList<UpdateSection> list = mFile.getSections();
-			for (int i = 0; i < list.size(); i++) {
-				UpdateSection us = list.get(i);
-				UpdateImageHead uih = us.getImageHead();
-				System.out.println("Section " + i + ":" + uih.getInfo());
-				System.out.println("OFFSET:    " + us.getOffset());
-				System.out.println("HEADSIZE:  " + uih.getHeadSize());
-				System.out.println("DATASIZE:  " + uih.getDataSize());
-				System.out.println("END:       " + (us.getOffset() + uih.getHeadSize() + uih.getDataSize()));
-				System.out.println();
-			}
+			System.out.print(mFile.getInfo());
 		}
 
 		// export selected image
-		private void exportImage(int index) {
+		private boolean export(String type, String value) throws IOException {
 			int buffer = 64 * 1024;
-			try {
-				mFile.exportImageFormFile(index, 0, buffer);
-			} catch (IOException e) {
-				e.printStackTrace();
+			boolean val = false;
+			if (type.equalsIgnoreCase("-name")) {
+				val = mFile.exportImage(value, 0, buffer);
+			} else if (type.equalsIgnoreCase("-index")) {
+				int index = 0;
+				try {
+					index = Integer.valueOf(value);
+				} catch (NumberFormatException e) {
+					System.out.println("Unknow Input");
+					return val;
+				}
+				val = mFile.exportImage(index, 0, buffer);
 			}
+			return val;
 		}
 	}
 }

@@ -16,7 +16,11 @@ public class UpdateImageHead {
 	// time 44 59 16
 	// info 60 91 32
 	// ......
-	private static final byte MAGIC[] = { (byte) 0x55, (byte) 0xAA, (byte) 0x5A, (byte) 0xA5 };
+	private final int MAGICS = 0;
+	private final int MAGICL = 4;
+	private final int MAGICE = MAGICS + MAGICL;
+	private byte mMagic[];
+	private final byte MAGIC[] = { (byte) 0x55, (byte) 0xAA, (byte) 0x5A, (byte) 0xA5 };
 
 	private final int HEADSIZES = 4;
 	private final int HEADSIZEL = 4;
@@ -32,6 +36,7 @@ public class UpdateImageHead {
 	private final int HARDWAREL = 8;
 	private final int HARDWAREE = HARDWARES + HARDWAREL;
 	private byte mHardware[];
+	private final byte HARDWAREPRE[] = { 'H', 'W' };
 
 	private final int CHECKSUMS = HARDWAREE;
 	private final int CHECKSUML = 4;
@@ -58,12 +63,11 @@ public class UpdateImageHead {
 	private final int INFOE = INFOS + INFOL;
 	private byte mInfo[];
 
-	private static final byte HARDWAREPRE[] = { 'H', 'W' };
 	private static final int NORMALHEADSIZE = 92;
-	private static final int MAXHEADSIZE = 1024;
 
 	public UpdateImageHead(byte[] head) {
 		// get useful data from part of all head
+		mMagic = Arrays.copyOfRange(head, MAGICS, MAGICE);
 		mHeadSize = Arrays.copyOfRange(head, HEADSIZES, HEADSIZEE);
 		mVersion = Arrays.copyOfRange(head, VERSIONS, VERSIONE);
 		mHardware = Arrays.copyOfRange(head, HARDWARES, HARDWAREE);
@@ -75,26 +79,28 @@ public class UpdateImageHead {
 	}
 
 	// Check the image head flag is right or not (MAGIC)
-	public static boolean isHeadStart(byte[] data) {
-		return Arrays.equals(MAGIC, data);
+	public boolean isRealMagic() {
+		return Arrays.equals(MAGIC, mMagic);
 	}
 
 	// Check the image head is real or not
 	// sometimes some data contain head flag
 	// but it can not contain hardware info at the same time
-	public static boolean isRealHead(byte[] data) {
-		return Arrays.equals(HARDWAREPRE, data);
+	public boolean isRealHead() {
+		String str = new String(mHardware).trim();
+		byte hardwarepre[] = str.substring(0, 2).getBytes();
+		return Arrays.equals(HARDWAREPRE, hardwarepre);
 	}
 
 	public static int getNormalHeadSize() {
 		return NORMALHEADSIZE;
 	}
 
-	public static int getMaxHeadSize() {
-		return MAXHEADSIZE;
+	public int getOffset() {
+		return 0;
 	}
 
-	public int getHeadSize() {
+	public int getSize() {
 		return Array.bytesToInt(mHeadSize);
 	}
 
