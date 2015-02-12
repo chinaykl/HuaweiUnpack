@@ -1,7 +1,6 @@
 package com.chinaykl.androidtool.huaweiunpacker.huaweifile;
 
 import java.io.BufferedInputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,8 +14,6 @@ public class UpdateFile {
 	private final byte[] SECTIONMAGIC = { (byte) 0x55, (byte) 0xAA, (byte) 0x5A, (byte) 0xA5 };
 	// the path of this file
 	private String mInPath;
-	// out folder
-	private final String OUTFOLDER = "out/";
 	// the list of sections in file
 	private ArrayList<UpdateSection> mSections = new ArrayList<UpdateSection>();
 
@@ -29,6 +26,18 @@ public class UpdateFile {
 
 		bif.close();
 		fis.close();
+	}
+
+	public String getPath() {
+		return mInPath;
+	}
+
+	public String getImageNameByIndex(int index) {
+		String val = "";
+		if (index < mSections.size()) {
+			val = mSections.get(index).getName();
+		}
+		return val;
 	}
 
 	// check is a section start or not
@@ -91,31 +100,9 @@ public class UpdateFile {
 		return val;
 	}
 
-	// generate output path according to input path
-	private String getOutPath(String imageName) throws IOException {
-		int lastPS = mInPath.lastIndexOf('/');
-		String val = mInPath.substring(0, lastPS + 1);
-
-		// check out folder is exist or not
-		val += OUTFOLDER;
-		File folder = new File(val);
-		if (!folder.exists()) {
-			folder.mkdirs();
-		}
-
-		// check out file is exist or not
-		val += imageName;
-		File file = new File(val);
-		if (file.exists()) {
-			file.delete();
-		}
-
-		return val;
-	}
-
-	private void exportFromSection(UpdateSection section, int exOff, int buffer) throws IOException {
+	private void exportFromSection(UpdateSection section, int exOff, int buffer, String outPath) throws IOException {
 		FileInputStream fis = new FileInputStream(mInPath);
-		FileOutputStream fos = new FileOutputStream(getOutPath(section.getName()));
+		FileOutputStream fos = new FileOutputStream(outPath);
 
 		section.exportData(fis, exOff, fos, buffer);
 
@@ -124,24 +111,24 @@ public class UpdateFile {
 	}
 
 	// export select<index> image
-	public boolean exportImage(int index, int exOff, int buffer) throws IOException {
+	public boolean exportImage(int index, int exOff, int buffer, String outPath) throws IOException {
 		boolean val = false;
 		if (index < mSections.size()) {
 			UpdateSection us = mSections.get(index);
-			exportFromSection(us, exOff, buffer);
+			exportFromSection(us, exOff, buffer, outPath);
 			val = true;
 		}
 		return val;
 	}
 
 	// export select <name> image
-	public boolean exportImage(String name, int exOff, int buffer) throws IOException {
+	public boolean exportImage(String name, int exOff, int buffer, String outPath) throws IOException {
 		boolean val = false;
 		UpdateSection us = null;
 		for (int i = 0; i < mSections.size(); i++) {
 			us = mSections.get(i);
-			if (us.getName().equalsIgnoreCase(name)) {
-				exportFromSection(us, exOff, buffer);
+			if (us.getName().equals(name)) {
+				exportFromSection(us, exOff, buffer, outPath);
 				val = true;
 				break;
 			}

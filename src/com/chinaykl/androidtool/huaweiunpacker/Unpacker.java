@@ -9,7 +9,7 @@ import com.chinaykl.library.util.variable.SystemIO;
 
 public class Unpacker {
 	private static final String PROGRAMNAME = "Huawei Rom Unpacker";
-	private static final String VERSION = "1.01";
+	private static final String VERSION = "1.02";
 	private static final String UPDATEFILE = "UPDATE.APP";
 	private static UpdateFile mFile;
 
@@ -113,33 +113,40 @@ public class Unpacker {
 		private boolean function(String input) throws IOException {
 			boolean quit = false;
 			String command[] = input.trim().split(" ");
-			switch (command[0]) {
-			case "h":
-				help();
-				break;
-			case "l":
-				listSection();
-				break;
-			case "o":
-				if (command.length == 3) {
-					boolean result = false;
-					result = export(command[1], command[2]);
-					if (result) {
-						System.out.println("Image Export Success");
-					} else {
-						System.out.println("Image Export Fail");
+			byte[] type = command[0].getBytes();
+			if (type.length == 1) {
+				switch (type[0]) {
+				case 'h':
+					help();
+					break;
+				case 'l':
+					listSection();
+					break;
+				case 'o':
+					if (command.length == 3) {
+						boolean result = false;
+						result = export(command[1], command[2]);
+						if (result) {
+							System.out.println("Image Export Success");
+						} else {
+							System.out.println("Image Export Fail");
+						}
 					}
+					break;
+				case 'q':
+					quit = true;
+					System.out.println("Quit Program");
+					break;
+				default:
+					System.out.println("Unknow Input");
+					help();
+					break;
 				}
-				break;
-			case "q":
-				quit = true;
-				System.out.println("Quit Program");
-				break;
-			default:
+			} else {
 				System.out.println("Unknow Input");
 				help();
-				break;
 			}
+
 			return quit;
 		}
 
@@ -148,13 +155,41 @@ public class Unpacker {
 			System.out.print(mFile.getInfo());
 		}
 
+		// out folder
+		private final String OUTFOLDER = "out/";
+
+		// generate output path according to input path
+		private String genOutPath(String filePath, String imageName) {
+			int lastPS = filePath.lastIndexOf('/');
+			String val = filePath.substring(0, lastPS + 1);
+
+			// check out folder is exist or not
+			val += OUTFOLDER;
+			File folder = new File(val);
+			if (!folder.exists()) {
+				folder.mkdirs();
+			}
+
+			// check out file is exist or not
+			val += imageName;
+			File file = new File(val);
+			if (file.exists()) {
+				file.delete();
+			}
+
+			return val;
+		}
+
 		// export selected image
 		private boolean export(String type, String value) throws IOException {
-			int buffer = 64 * 1024;
+			int buffer = 8 * 1024 * 1024;
 			boolean val = false;
 			if (type.equalsIgnoreCase("-name")) {
-				val = mFile.exportImage(value, 0, buffer);
+				// export in name way
+				String op = genOutPath(mFile.getPath(), value);
+				val = mFile.exportImage(value, 0, buffer, op);
 			} else if (type.equalsIgnoreCase("-index")) {
+				// export in index way
 				int index = 0;
 				try {
 					index = Integer.valueOf(value);
@@ -162,7 +197,8 @@ public class Unpacker {
 					System.out.println("Unknow Input");
 					return val;
 				}
-				val = mFile.exportImage(index, 0, buffer);
+				String op = genOutPath(mFile.getPath(), mFile.getImageNameByIndex(index));
+				val = mFile.exportImage(index, 0, buffer, op);
 			}
 			return val;
 		}
