@@ -9,7 +9,7 @@ import com.chinaykl.library.util.variable.SystemIO;
 
 public class Unpacker {
 	private static final String PROGRAMNAME = "Huawei Rom Unpacker";
-	private static final String VERSION = "1.00";
+	private static final String VERSION = "1.01";
 	private static final String UPDATEFILE = "UPDATE.APP";
 	private static UpdateFile mFile;
 
@@ -54,12 +54,25 @@ public class Unpacker {
 
 		// to adjust to different possible path
 		private String revisePath(String op) {
-			String np = op;
-			if (op.endsWith(UPDATEFILE) == false) {
-				if (op.endsWith(File.pathSeparator)) {
-					np = op + UPDATEFILE;
+			String np = op.trim();
+			// real path may be surrounded by ' or "
+			// when you replace input with drag a file into it
+			if ((np.startsWith("\"") && np.endsWith("\"")) || (np.startsWith("\'") && np.endsWith("\'"))) {
+				np = np.substring(1, op.length() - 1);
+			}
+
+			// real path may be surrounded by ' or "
+			// when you replace input with copy a file into it
+			if (np.startsWith("file://")) {
+				np = np.replaceFirst("file://", "");
+			}
+
+			// to adjust different input
+			if (np.endsWith(UPDATEFILE) == false) {
+				if (np.endsWith(File.pathSeparator)) {
+					np = np + UPDATEFILE;
 				} else {
-					np = op + File.pathSeparator + UPDATEFILE;
+					np = np + File.pathSeparator + UPDATEFILE;
 				}
 			}
 			return np;

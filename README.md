@@ -1,7 +1,7 @@
 # HuaweiUnpack
 Unpack Huawei Android Image package (UPDATE.APP)
 
-Version 1.00<br>
+Version 1.01<br>
 Command:<br>
 ```
 h         help
